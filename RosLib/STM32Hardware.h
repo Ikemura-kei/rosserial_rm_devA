@@ -35,7 +35,7 @@
 #ifndef ROS_STM32_HARDWARE_H_
 #define ROS_STM32_HARDWARE_H_
 
-#define STM32F3xx  // Change for your device
+#define STM32F4xx  // Change for your device
 #ifdef STM32F3xx
 #include "stm32f3xx_hal.h"
 #include "stm32f3xx_hal_uart.h"
@@ -48,9 +48,10 @@
 #include "stm32f7xx_hal.h"
 #include "stm32f7xx_hal_uart.h"
 #endif /* STM32F7xx */
-
-extern UART_HandleTypeDef huart2;
-
+#include <DebugWatcher.h>
+extern UART_HandleTypeDef huart7;
+extern bool m;
+//extern HAL_UART_StateTypeDef uartStateWatch;
 class STM32Hardware {
   protected:
     UART_HandleTypeDef *huart;
@@ -66,7 +67,7 @@ class STM32Hardware {
 
   public:
     STM32Hardware():
-      huart(&huart2), rind(0), twind(0), tfind(0){
+      huart(&huart7), rind(0), twind(0), tfind(0){
     }
 
     STM32Hardware(UART_HandleTypeDef *huart_):
@@ -74,6 +75,7 @@ class STM32Hardware {
     }
   
     void init(){
+    debugWatcherLoop();
       reset_rbuf();
     }
 
@@ -92,9 +94,11 @@ class STM32Hardware {
 
     void flush(void){
       static bool mutex = false;
-
+      m = mutex;
+      debugWatcherLoop();
       if((huart->gState == HAL_UART_STATE_READY) && !mutex){
         mutex = true;
+
 
         if(twind != tfind){
           uint16_t len = 0;
@@ -104,7 +108,7 @@ class STM32Hardware {
 		  }else{
 			len = tbuflen - tfind;
 			HAL_UART_Transmit_DMA(huart, &(tbuf[tfind]), len);
-			HAL_UART_Transmit_DMA(huart, &(tbuf), twind);
+			HAL_UART_Transmit_DMA(huart, tbuf, twind);
 		  }
           tfind = twind;
         }
@@ -113,6 +117,7 @@ class STM32Hardware {
     }
 
     void write(uint8_t* data, int length){
+   debugWatcherLoop();
       int n = length;
       n = n <= tbuflen ? n : tbuflen;
 

@@ -36,7 +36,7 @@
 #define ROS_NODE_HANDLE_H_
 
 #include <stdint.h>
-
+#include <DebugWatcher.h>
 #include "std_msgs/Time.h"
 #include "rosserial_msgs/TopicInfo.h"
 #include "rosserial_msgs/Log.h"
@@ -468,6 +468,8 @@ public:
 
   virtual int publish(int id, const Msg * msg) override
   {
+	  setBoolean(configured_);
+	  setInteger(id);
     if (id >= 100 && !configured_)
       return 0;
 
